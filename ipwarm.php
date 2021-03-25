@@ -11,7 +11,12 @@ use CRM_Ipwarm_ExtensionUtil as E;
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_config/
  */
 function ipwarm_civicrm_config(&$config) {
+  // Use a static var to ensure we don't add this listener twice, which can happen
+  // when running the api with `cv`.
+  if (!isset(\Civi::$statics[__FUNCTION__]) || !\Civi::$statics[__FUNCTION__]) {
   Civi::dispatcher()->addListener(\Civi\API\Events::RESPOND, ['CRM_Ipwarm_APIWrapper', 'RESPOND'], -100);
+    \Civi::$statics[__FUNCTION__] = true;
+  }
   _ipwarm_civix_civicrm_config($config);
 }
 
