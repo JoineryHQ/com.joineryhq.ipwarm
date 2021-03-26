@@ -1,5 +1,7 @@
 <?php
 
+use CRM_Ipwarm_ExtensionUtil as E;
+
 /**
  * Implements an API Wrapper to signal the membership creation preHook that
  * we're currently inside of a payment transaction.
