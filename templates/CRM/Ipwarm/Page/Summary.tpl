@@ -1,4 +1,7 @@
 <div class="crm-form crm-form-block crm-string_override-form-block">
+  <p><b>{ts}Daily usage{/ts}</b>: {$dailyUsage}
+  <br /><b>{ts}Hourly usage{/ts}</b>: {$hourlyUsage}
+  <br /><b>{ts}Current activity level{/ts}</b>: {$currentLevel}</p>
   <table class="form-layout-compressed" style="width: 100%;">
     <tr>
       <td>
