@@ -1,23 +1,22 @@
 <?php
 
-use CRM_Ipwarm_ExtensionUtil as E;
-
 /**
  * Implements an API Wrapper to signal the membership creation preHook that
  * we're currently inside of a payment transaction.
  */
 class CRM_Ipwarm_APIWrapper {
 
-  public static function RESPOND($event) {
+  public static function PREPARE($event) {
     $request = $event->getApiRequestSig();
-    $apiRequest = $event->getApiRequest();
-    $result = $event->getResponse();
 
     switch($request) {
       case '3.job.process_mailing':
-        Civi::log()->info('com.joineryhq.ipwarm: we observe that the job.process_mailing api has complete just now.');
+        $limitManager = new CRM_Ipwarm_Limitmanager();
+        if ($limitManager->testWasLatestDateLevelYesterday()) {
+          $limitManager->setWarmingLevel();
+          $limitManager->limitMailings();
         break;
+      }
     }
   }
-
 }
