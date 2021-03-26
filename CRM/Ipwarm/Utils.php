@@ -1,5 +1,6 @@
 <?php
 
+use CRM_Ipwarm_ExtensionUtil as E;
 
 /**
  * Utility methods for ipwarm extension.
@@ -7,9 +8,10 @@
  * @author as
  */
 class CRM_Ipwarm_Utils {
+
   public static function getWarmupSchedule() {
     return [
-      // Age-in-days => ['hourly' => hourly-limit, 'daily' => daily-limit]
+      // Age-in-days => ['hourly' => hourl-limit, 'daily' => daily-limit]
       0 => ['hourly' => 20, 'daily' => 50],
       1 => ['hourly' => 28, 'daily' => 100],
       2 => ['hourly' => 39, 'daily' => 500],
@@ -29,13 +31,17 @@ class CRM_Ipwarm_Utils {
       16 => ['hourly' => 4356, 'daily' => 4000000],
     ];
   }
+
   public static function getDailyUsage() {
     return 700;
   }
+
   public static function getHourlyUsage() {
     return 10;
   }
+
   public static function getCurrentLevel() {
     return 3;
   }
+
 }
