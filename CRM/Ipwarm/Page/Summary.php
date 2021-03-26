@@ -6,10 +6,12 @@ class CRM_Ipwarm_Page_Summary extends CRM_Core_Page {
   public function run() {
     CRM_Utils_System::setTitle(E::ts('IP Warming Summary'));
 
-    $summaryList = CRM_Ipwarm_Limitmanager::getWarmupSchedule();
-    $dailyUsage = CRM_Ipwarm_Limitmanager::getDailyUsage();
-    $hourlyUsage = CRM_Ipwarm_Limitmanager::getHourlyUsage();
-    $currentLevel = CRM_Ipwarm_Limitmanager::getCurrentLevel();
+    $limitManager = new CRM_Ipwarm_Limitmanager();
+
+    $summaryList = $limitManager->getWarmupSchedule();
+    $dailyUsage = $limitManager->getDailyUsage();
+    $hourlyUsage = $limitManager->getHourlyUsage();
+    $currentLevel = $limitManager->getCurrentLevel();
 
     $summaryList[$currentLevel]['class'] = 'crm-row-selected';
 
