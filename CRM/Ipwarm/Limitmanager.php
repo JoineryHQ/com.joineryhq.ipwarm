@@ -9,29 +9,28 @@
 class CRM_Ipwarm_Limitmanager {
 
   /**
-   * @var Int Current daily email usage
-   */
-  var $dailyUsage;
-
-  /**
-   * @var Int Current email usage in last 60 minutes
-   */
-  var $hourlyUsage;
-
-  /**
    * @var Int Current warming level
    */
   var $currentWarmingLevel;
-  
+
   /**
-   * The current date and time, as a Unix timestamp. Useful for testing.
-   * @var Int 
+   * @var Int The current date and time, as a Unix timestamp.
    */
   var $currentDateTime;
-  
+
+  private $testableValuesSource;
+
   public function __construct() {
-//    $this->currentDateTime = time();
-    $this->currentDateTime = strtotime('+3 day');
+    if (getenv('CIVICRM_UF') == 'UnitTests') {
+      global $ipwarmTestableValueSource;
+      if (is_a($ipwarmTestableValueSource, 'CRM_Ipwarm_Limitmanager_testableValuesSource')) {
+        $this->testableValuesSource = $ipwarmTestableValueSource;
+      }
+    }
+    if (!isset($this->testableValuesSource)) {
+      $this->testableValuesSource = new CRM_Ipwarm_Limitmanager_testableValuesSource();
+    }
+    $this->currentDateTime = $this->testableValuesSource->getCurrentDateTime();
   }
 
   /**
@@ -66,82 +65,27 @@ class CRM_Ipwarm_Limitmanager {
   }
 
   /**
-   * Get the total number of emails sent (or attempted sent) via CiviMail on
-   * a given day; this is the total delivereed plus the total bounced, per
-   * tables civicrm_mailing_event_bounce and civicrm_mailing_event_delivered
+   * Get the outbound mail usage on the current date.
+   *
+   * @see CRM_Ipwarm_Limitmanager_testableValuesSource::getDailyUsage().
    *
    * @param String $date A date in the format YYYYMMDD; if NULL, the current date is used.
    *
    * @return Int
    */
   public function getDailyUsage($date = NULL) {
-    if (!isset($date)) {
-      $date = date("Ymd", $this->currentDateTime);
-    }
-    $nextDate = date('Ymd', strtotime('+1 day', strtotime($date)));
-    if (!isset($this->dailyUsage[$date])) {
-      $query = "
-        SELECT SUM(t.cnt)
-        FROM (
-          SELECT 
-            COUNT(*) cnt, 'bounce'
-          FROM 
-            civicrm_mailing_event_bounce
-          WHERE
-            time_stamp BETWEEN %1 AND %2
-        UNION
-          SELECT 
-            COUNT(*), 'delivered'
-          FROM 
-            civicrm_mailing_event_delivered
-          WHERE
-            time_stamp BETWEEN %1 AND %2
-        ) t
-      ";
-      $queryParams = [
-        '1' => [$date, 'Int'],
-        '2' => [$nextDate, 'Int']
-      ];
-      $this->dailyUsage[$date] = CRM_Core_DAO::singleValueQuery($query, $queryParams);
-    }
-    return $this->dailyUsage[$date];
+    return $this->testableValuesSource->getDailyUsage($date);
   }
 
   /**
-   * Get the total number of emails sent (or attempted sent) via CiviMail within
-   * the last 60 minutes until now; this is the total delivereed plus the total 
-   * bounced, per tables civicrm_mailing_event_bounce and civicrm_mailing_event_delivered
+   * Get the outbound email usage in the last 60 minutes.
+   *
+   * @see CRM_Ipwarm_Limitmanager_testableValuesSource::getHourlyUsage().
    *
    * @return int
    */
   public function getHourlyUsage() {
-    if (!isset($this->hourlyUsage)) {
-      $query = "
-        SELECT SUM(t.cnt)
-        FROM (
-          SELECT 
-            COUNT(*) cnt, 'bounce'
-          FROM 
-            civicrm_mailing_event_bounce
-          WHERE
-            -- FIXME: ADJUST FOR this->currentDateTime
-            time_stamp > DATE_ADD(FROM_UNIXTIME(%1), INTERVAL -1 HOUR)
-        UNION
-          SELECT 
-            COUNT(*), 'delivered'
-          FROM 
-            civicrm_mailing_event_delivered
-          WHERE
-            -- FIXME: ADJUST FOR this->currentDateTime
-            time_stamp > DATE_ADD(FROM_UNIXTIME(%1), INTERVAL -1 HOUR)
-        ) t
-      ";
-      $queryParams = [
-        1 => [$this->currentDateTime, 'Int'],
-      ];
-      $this->hourlyUsage = CRM_Core_DAO::singleValueQuery($query, $queryParams);      
-    }
-    return $this->hourlyUsage;
+    return $this->testableValuesSource->getHourlyUsage();
   }
 
   /**
@@ -325,10 +269,10 @@ class CRM_Ipwarm_Limitmanager {
    *
    * @return Bool
    */
-  public function testWasLatestDateLevelNullOrYesterday() {
+  public function testWasLatestDateLevelYesterday() {
     $yesterdayDate = date('Ymd', strtotime('1 day ago', $this->currentDateTime));
     $latestDateAndLevel = $this->getLatestDateAndLevel();
-    return (empty($latestDateAndLevel['date']) || $yesterdayDate == $latestDateAndLevel['date']);
+    return ($yesterdayDate == $latestDateAndLevel['date']);
   }
 
   /**
@@ -340,7 +284,7 @@ class CRM_Ipwarm_Limitmanager {
     // Valid statuses are listed in CRM_Mailing_BAO_MailingJob::status().
     // At time of writing (Saints preserve us!) these are as follows, and
     // we're intrested in the starred ones:
-    //   'Scheduled' * 
+    //   'Scheduled' *
     //   'Running'   *
     //   'Complete'
     //   'Paused'
@@ -354,7 +298,7 @@ class CRM_Ipwarm_Limitmanager {
       civicrm_api3('MailingJob', 'create', [
         'id' => $mailingJob['id'],
         'status' => 'Paused',
-      ]); 
+      ]);
       $newlyPausedMaingJobIds[] = $mailingJob['id'];
     }
     $this->updatePausedMailingJobs($newlyPausedMaingJobIds);
@@ -363,12 +307,12 @@ class CRM_Ipwarm_Limitmanager {
   /**
    * Update the setting ipwarm_paused_mailings to include a list of newly
    * paused mailing job IDs, in addition to any already stored. To do this, we
-   * getPausedMailingJobs(), remove from that list any that are 
-   * already completed or canceled, append the new list of paused jobs, and 
+   * getPausedMailingJobs(), remove from that list any that are
+   * already completed or canceled, append the new list of paused jobs, and
    * filter the whole for unique values; then store that final list with
    * setPausedMailingJobs().
-   * 
-   * @param Array $newlyPausedMaingJobIds 
+   *
+   * @param Array $newlyPausedMaingJobIds
    */
   public function updatePausedMailingJobs($newlyPausedMaingJobIds) {
     $pausedMailingJobIds = $this->getPausedMailingJobIds();
@@ -382,17 +326,17 @@ class CRM_Ipwarm_Limitmanager {
     $pausedMailingJobIds = array_unique(array_merge($pausedMailingJobIds, $newlyPausedMaingJobIds));
     $this->setPausedMailingJobIds($pausedMailingJobIds);
   }
-  
-  /** 
-   * Store an array of IDs for paused mailing jobs into the setting ipwarm_paused_mailings. 
+
+  /**
+   * Store an array of IDs for paused mailing jobs into the setting ipwarm_paused_mailings.
    * To do this, we implode the given array with commas, and save to settings.
    */
   public function setPausedMailingJobIds($pausedMailingJobIds) {
     $settingValue = implode(',',  $pausedMailingJobIds);
     $this->setSetting('ipwarm_paused_mailings', $settingValue);
   }
-  
-  /** 
+
+  /**
    * Get an array of IDs for paused mailing jobs. To do this, we get the setting
    * ipwarm_paused_mailings and split it on comma into an array.
    */
@@ -415,8 +359,8 @@ class CRM_Ipwarm_Limitmanager {
       ]);
       foreach ($pausedMailingJobs['values'] as $pausedMailingJob) {
         // Would rather use an api here, but the BAO -- and no api -- handles this
-        // in an intelligent way, so that "resume" will change the status to 
-        // Running or Scheduled appropriately. Note that the BAO is expecting 
+        // in an intelligent way, so that "resume" will change the status to
+        // Running or Scheduled appropriately. Note that the BAO is expecting
         // a mailing.id, not a mailing_job.id.
         CRM_Mailing_BAO_MailingJob::resume($pausedMailingJob['mailing_id']);
       }

@@ -7,9 +7,9 @@
  * extension.
  */
 class CRM_Ipwarm_ExtensionUtil {
-  const SHORT_NAME = "ipwarm";
-  const LONG_NAME = "com.joineryhq.ipwarm";
-  const CLASS_PREFIX = "CRM_Ipwarm";
+  const SHORT_NAME = 'ipwarm';
+  const LONG_NAME = 'com.joineryhq.ipwarm';
+  const CLASS_PREFIX = 'CRM_Ipwarm';
 
   /**
    * Translate a string using the extension's domain.
