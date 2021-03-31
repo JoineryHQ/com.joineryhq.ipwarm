@@ -12,11 +12,11 @@ class CRM_Ipwarm_APIWrapper {
     switch($request) {
       case '3.job.process_mailing':
         $limitManager = new CRM_Ipwarm_Limitmanager();
-        if ($limitManager->testWasLatestDateLevelYesterday()) {
+        if ($limitManager->testWasLatestDateLevelNullOrYesterday()) {
           $limitManager->setWarmingLevel();
-          $limitManager->limitMailings();
+        }
+        $limitManager->limitMailings();
         break;
-      }
     }
   }
 }

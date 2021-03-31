@@ -1,7 +1,7 @@
 <div class="crm-form crm-form-block crm-string_override-form-block">
   <p><b>{ts}Daily usage{/ts}</b>: {$dailyUsage}
   <br /><b>{ts}Hourly usage{/ts}</b>: {$hourlyUsage}
-  <br /><b>{ts}Current activity level{/ts}</b>: {$currentLevel}</p>
+  <br /><b>{ts}Current warming level{/ts}</b>: {$currentLevel}</p>
   <table class="form-layout-compressed" style="width: 100%;">
     <tr>
       <td>
@@ -11,6 +11,7 @@
               <th>{ts}Warmup Age (Days){/ts}</th>
               <th>{ts}Hourly Email Limit{/ts}</th>
               <th>{ts}Daily Email Limit{/ts}</th>
+              <th></th>
             </tr>
           </thead>
           <tbody class="ipwarm-summary-body">
@@ -19,6 +20,7 @@
                 <td>{$summaryKey}</td>
                 <td>{$summary.hourly}</td>
                 <td>{$summary.daily}</td>
+                <td><a href="{crmURL p="civicrm/admin/ipwarm/summary" q="action=update&id=$summaryKey&reset=1"}">Use now</a></td>
               </tr>
             {/foreach}
           </tbody>
