@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <extension key="com.joineryhq.ipwarm" type="module">
   <file>ipwarm</file>
-  <name>IPWarm</name>
-  <description>FIXME</description>
+  <name>IP Warming</name>
+  <description>Limits, and gradually increases, outbound email volume for warming a new dedicated IP address.</description>
   <license>GPL-3.0</license>
   <maintainer>
-    <author>https://github.com/JoineryHQ/</author>
-    <email>info@JoineryHQ.com</email>
+    <author>Allen Shaw</author>
+    <email>allen@joineryhq.com</email>
   </maintainer>
   <urls>
     <url desc="Main Extension Page">https://github.com/JoineryHQ/com.joineryhq.ipwarm</url>
@@ -16,11 +16,11 @@
   </urls>
   <releaseDate>2021-03-24</releaseDate>
   <version>1.0</version>
-  <develStage>alpha</develStage>
+  <develStage>beta</develStage>
   <compatibility>
     <ver>5.0</ver>
   </compatibility>
-  <comments>This is a new, undeveloped module</comments>
+  <comments>Developed by Joinery</comments>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
